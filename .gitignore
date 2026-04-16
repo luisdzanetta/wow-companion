@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Variáveis de ambiente (NUNCA commitar credenciais)
+.env
+.env.local
+*.env
+
+# Banco de dados local
+*.db
+*.sqlite
+*.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node / Frontend (quando chegar a hora)
+node_modules/
+.next/
+dist/
+build/
