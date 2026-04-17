@@ -1,26 +1,35 @@
-# WoW Companion App
+# WoW Companion
 
-Companion app para jogadores de World of Warcraft focado em tracking semanal multi-char.
+A weekly activity tracker for World of Warcraft players managing multiple characters.
 
-## O problema
+## The Problem
 
-WoW é um jogo de gestão de checklist semanal (vault, crests, weekly quests, profession knowledge...). Para jogadores com tempo limitado e múltiplos chars, acompanhar o progresso de cada objetivo por char é cognitivamente pesado e não há ferramenta boa que resolva isso.
+WoW is, at its core, a weekly checklist management game: Great Vault slots, crests, weekly quests, profession knowledge points, renown — and all of this multiplied by however many characters you play. For players with limited playtime (working full-time, multi-char enthusiasts), keeping track of what each character still needs to do this week is cognitively heavy, and existing tools don't solve it well.
+
+This project aims to build a lightweight companion app that answers one question quickly: **"What do I still need to do in WoW this week?"**
 
 ## Status
 
-🚧 Em desenvolvimento — MVP em construção.
+🚧 Work in progress — MVP under construction.
 
 ## Stack
 
 - **Backend:** Python + FastAPI
-- **Banco de dados:** SQLite (MVP) → Postgres (produção)
+- **Database:** SQLite (MVP) → PostgreSQL (production)
 - **Frontend:** Next.js + Tailwind + shadcn/ui
-- **APIs consumidas:** Battle.net, Raider.io
+- **External APIs:** Battle.net, Raider.io
 
 ## Roadmap
 
-- [x] Bloco 1 — Setup de ambiente
-- [x] Bloco 2 — Git + GitHub
-- [ ] Bloco 3 — Primeira chamada à Battle.net API
-- [ ] Bloco 4 — Lógica do Great Vault
-- [ ] Bloco 5 — Persistência de snapshots
+- [x] Environment setup
+- [x] Git + GitHub
+- [ ] Battle.net API integration
+- [ ] Great Vault tracking logic
+- [ ] Weekly quests tracking
+- [ ] Snapshot persistence
+- [ ] Multi-character dashboard
+- [ ] Web UI
+
+## Motivation
+
+Personal portfolio project combining two passions: data analysis and WoW (playing since 2006). Built with the goal of showcasing data engineering, API integration, and domain modeling skills.
