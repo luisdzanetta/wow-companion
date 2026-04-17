@@ -79,6 +79,43 @@ def get_character_profile(access_token: str, realm: str, character_name: str) ->
     response.raise_for_status()
     return response.json()
 
+def get_mythic_keystone_profile(
+    access_token: str, realm: str, character_name: str
+) -> dict:
+    """Fetch a character's Mythic+ profile.
+
+    Returns:
+      - current_period.best_runs: best runs completed in the current weekly period
+      - seasons: list of seasons the character participated in
+      - current_mythic_rating: overall M+ score for the current season
+
+    Note: this hits the /mythic-keystone-profile endpoint (without /season/current).
+    The /season/current sub-endpoint is known to return 404 during early-season
+    periods, while the parent endpoint already contains the weekly best_runs
+    we need for Great Vault tracking.
+
+    Args:
+        access_token: Token obtained via get_access_token().
+        realm: Realm name (will be normalized).
+        character_name: Character name (will be normalized).
+
+    Returns:
+        Dictionary with the M+ profile.
+    """
+    realm_slug = realm.lower().replace(" ", "-").replace("'", "")
+    name_slug = character_name.lower()
+
+    url = (
+        f"{API_BASE_URL}/profile/wow/character/{realm_slug}/{name_slug}"
+        f"/mythic-keystone-profile"
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"namespace": f"profile-{REGION}", "locale": "en_US"}
+
+    response = httpx.get(url, headers=headers, params=params, timeout=10.0)
+    response.raise_for_status()
+    return response.json()
+
 if __name__ == "__main__":
     print("Authenticating with Battle.net...")
     token = get_access_token()
@@ -97,3 +134,8 @@ if __name__ == "__main__":
     print(f"  Item Level:   {profile['equipped_item_level']} (equipped) / {profile['average_item_level']} (avg)")
     print(f"  Achievements: {profile['achievement_points']:,} points")
     print(f"  Guild:        {profile.get('guild', {}).get('name', '(no guild)')}")
+
+    # Uncomment to inspect the raw JSON response
+    # import json
+    # print("\n--- Raw JSON ---")
+    # print(json.dumps(profile, indent=2))

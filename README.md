@@ -23,7 +23,7 @@ This project aims to build a lightweight companion app that answers one question
 
 - [x] Environment setup
 - [x] Git + GitHub
-- [ ] Battle.net API integration
+- [x] Battle.net API integration
 - [ ] Great Vault tracking logic
 - [ ] Weekly quests tracking
 - [ ] Snapshot persistence
