@@ -57,13 +57,43 @@ def get_wow_token_price(access_token: str) -> dict:
     response.raise_for_status()
     return response.json()
 
+def get_character_profile(access_token: str, realm: str, character_name: str) -> dict:
+    """Fetch a character's basic profile (class, spec, level, ilvl, etc.).
+
+    Args:
+        access_token: Token obtained via get_access_token().
+        realm: Realm name (e.g., "Thrall", "Area 52"). Will be normalized.
+        character_name: Character name (e.g., "Stormtroll"). Will be normalized.
+
+    Returns:
+        Dictionary with the character's profile data.
+    """
+    realm_slug = realm.lower().replace(" ", "-").replace("'", "")
+    name_slug = character_name.lower()
+
+    url = f"{API_BASE_URL}/profile/wow/character/{realm_slug}/{name_slug}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"namespace": f"profile-{REGION}", "locale": "en_US"}
+
+    response = httpx.get(url, headers=headers, params=params, timeout=10.0)
+    response.raise_for_status()
+    return response.json()
 
 if __name__ == "__main__":
     print("Authenticating with Battle.net...")
     token = get_access_token()
     print(f"Token received: {token[:20]}...\n")
 
-    print("Fetching WoW Token price...")
-    token_data = get_wow_token_price(token)
-    price_in_gold = token_data["price"] // 10000  # API returns copper
-    print(f"Current price: {price_in_gold:,} gold")
+    print("Fetching character profile: Stormtroll-Thrall...")
+    profile = get_character_profile(token, realm="Thrall", character_name="Stormtroll")
+
+    print(f"  Name:         {profile['name']}")
+    print(f"  Realm:        {profile['realm']['name']}")
+    print(f"  Level:        {profile['level']}")
+    print(f"  Class:        {profile['character_class']['name']}")
+    print(f"  Spec:         {profile['active_spec']['name']}")
+    print(f"  Race:         {profile['race']['name']}")
+    print(f"  Faction:      {profile['faction']['name']}")
+    print(f"  Item Level:   {profile['equipped_item_level']} (equipped) / {profile['average_item_level']} (avg)")
+    print(f"  Achievements: {profile['achievement_points']:,} points")
+    print(f"  Guild:        {profile.get('guild', {}).get('name', '(no guild)')}")
