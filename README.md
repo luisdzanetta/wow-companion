@@ -20,7 +20,7 @@ WoW é um jogo de gestão de checklist semanal (vault, crests, weekly quests, pr
 ## Roadmap
 
 - [x] Bloco 1 — Setup de ambiente
-- [ ] Bloco 2 — Git + GitHub
+- [x] Bloco 2 — Git + GitHub
 - [ ] Bloco 3 — Primeira chamada à Battle.net API
 - [ ] Bloco 4 — Lógica do Great Vault
 - [ ] Bloco 5 — Persistência de snapshots
