@@ -38,3 +38,6 @@ build/
 
 # Exploratory/debug output
 scripts/_*.json
+
+# Database files
+data/
