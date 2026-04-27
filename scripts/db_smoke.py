@@ -1,35 +1,36 @@
-"""Smoke test: create a character, read it back."""
+"""Smoke test: exercise the Character repository."""
 
 from app.db.engine import SessionLocal
-from app.db.models import Character
+from app.db.repositories.characters import CharacterRepository
 
 if __name__ == "__main__":
     session = SessionLocal()
     try:
-        # Check if Stormpaladin already exists (so we can re-run this script)
-        existing = session.query(Character).filter_by(
-            region="us", realm_slug="alterac-mountains", name_slug="stormpaladin"
-        ).first()
+        repo = CharacterRepository(session)
 
-        if existing:
-            print(f"Found existing: {existing!r}")
-        else:
-            new_char = Character(
-                region="us",
-                realm_slug="alterac-mountains",
-                name_slug="stormpaladin",
-                display_name="Stormpaladin",
-            )
-            session.add(new_char)
-            session.commit()
-            session.refresh(new_char)
-            print(f"Created: {new_char!r}")
+        # Idempotent: get_or_create handles "already exists" case
+        char, created = repo.get_or_create(
+            region="us",
+            realm="Alterac Mountains",
+            character_name="Stormpaladin",
+        )
+        status = "Created" if created else "Found existing"
+        print(f"{status}: {char!r}")
 
-        # List all characters
-        all_chars = session.query(Character).all()
-        print(f"\nAll characters in DB ({len(all_chars)}):")
-        for char in all_chars:
-            print(f"  {char!r}")
+        char2, created2 = repo.get_or_create(
+            region="us",
+            realm="Thrall",
+            character_name="Stormtroll",
+        )
+        status2 = "Created" if created2 else "Found existing"
+        print(f"{status2}: {char2!r}")
+
+        session.commit()
+
+        # List all
+        print("\nAll characters in DB:")
+        for c in repo.list_all():
+            print(f"  {c!r}")
 
     finally:
         session.close()
