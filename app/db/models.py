@@ -3,6 +3,11 @@
 Design note: each Snapshot stores both the raw JSON response and denormalized
 columns for fast queries. Raw JSON enables reprocessing; denormalized columns
 enable analytical queries without JSON parsing.
+
+Timezone handling: SQLite doesn't preserve tzinfo natively. We work around this
+by (1) always writing UTC datetimes, (2) using a TypeDecorator that re-attaches
+UTC tzinfo on read. The rest of the codebase can rely on every datetime being
+timezone-aware UTC.
 """
 
 from datetime import datetime, timezone
@@ -14,6 +19,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    TypeDecorator,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,8 +28,37 @@ from app.db.base import Base
 
 
 def utc_now() -> datetime:
-    """Return current UTC time. Wrapped in a function so it's called at insert time."""
+    """Return current UTC time as a timezone-aware datetime."""
     return datetime.now(timezone.utc)
+
+
+class UTCDateTime(TypeDecorator):
+    """DateTime column that ensures values are always UTC and timezone-aware.
+
+    On write: converts to UTC if needed, raises if naive.
+    On read: re-attaches UTC tzinfo (SQLite drops it).
+    """
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError(
+                "Naive datetime not allowed. Pass a timezone-aware datetime "
+                "(use app.db.models.utc_now())."
+            )
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(self, value: datetime | None, dialect):
+        if value is None:
+            return None
+        # SQLite returns naive datetime; mark as UTC
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
 
 
 class Character(Base):
@@ -33,19 +68,15 @@ class Character(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    # Natural identity (case-insensitive, stored lowercase)
     region: Mapped[str] = mapped_column(String(4), nullable=False)
     realm_slug: Mapped[str] = mapped_column(String(64), nullable=False)
     name_slug: Mapped[str] = mapped_column(String(64), nullable=False)
-
-    # Display name (keeps original casing, e.g. "Stormpaladin")
     display_name: Mapped[str] = mapped_column(String(64), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, nullable=False
+        UTCDateTime, default=utc_now, nullable=False
     )
 
-    # Relationship: one character has many snapshots
     snapshots: Mapped[list["Snapshot"]] = relationship(
         back_populates="character",
         cascade="all, delete-orphan",
@@ -71,18 +102,15 @@ class Snapshot(Base):
     )
 
     taken_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, nullable=False
+        UTCDateTime, default=utc_now, nullable=False
     )
-    week_id: Mapped[str] = mapped_column(String(8), nullable=False)  # e.g. "2026-W16"
+    week_id: Mapped[str] = mapped_column(String(8), nullable=False)
 
-    # Full raw API response — preserved for reprocessing
     raw_data: Mapped[dict] = mapped_column(JSON, nullable=False)
 
-    # Denormalized fields for fast analytical queries
     mythic_rating: Mapped[float] = mapped_column(nullable=False, default=0.0)
     weekly_run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    # Vault projection (nullable because slots may be locked)
     vault_slot_1_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     vault_slot_2_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     vault_slot_3_level: Mapped[int | None] = mapped_column(Integer, nullable=True)

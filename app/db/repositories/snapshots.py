@@ -87,3 +87,55 @@ class SnapshotRepository:
         self.session.add(snapshot)
         self.session.flush()
         return snapshot
+    # --- Analytics ---
+
+    def list_latest_per_week(self, character_id: int) -> list[Snapshot]:
+        """Return one snapshot per week (the most recent of each), oldest first.
+
+        Useful as the canonical "weekly history" of a character.
+        """
+        from sqlalchemy import func, and_
+
+        # Subquery: for each week, find the most recent taken_at
+        latest_subq = (
+            self.session.query(
+                Snapshot.week_id.label("week_id"),
+                func.max(Snapshot.taken_at).label("max_taken_at"),
+            )
+            .filter(Snapshot.character_id == character_id)
+            .group_by(Snapshot.week_id)
+            .subquery()
+        )
+
+        # Main query: snapshots that match (week_id, max_taken_at)
+        return (
+            self.session.query(Snapshot)
+            .join(
+                latest_subq,
+                and_(
+                    Snapshot.week_id == latest_subq.c.week_id,
+                    Snapshot.taken_at == latest_subq.c.max_taken_at,
+                ),
+            )
+            .filter(Snapshot.character_id == character_id)
+            .order_by(Snapshot.week_id.asc())
+            .all()
+        )
+
+    def count_total(self, character_id: int) -> int:
+        """Return total number of snapshots stored for a character."""
+        return (
+            self.session.query(Snapshot)
+            .filter_by(character_id=character_id)
+            .count()
+        )
+
+    def count_distinct_weeks(self, character_id: int) -> int:
+        """Return number of distinct weeks the character has snapshots for."""
+        from sqlalchemy import func, distinct
+
+        return (
+            self.session.query(func.count(distinct(Snapshot.week_id)))
+            .filter(Snapshot.character_id == character_id)
+            .scalar()
+        )
